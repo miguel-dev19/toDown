@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">toDown</string>
+    <string name="welcome_title">toDown</string>
+    <string name="welcome_subtitle">Gestor de descargas</string>
+    <string name="continue_button">Continuar</string>
+    <string name="login_title">Acceso a toDown</string>
+    <string name="login_subtitle">Ingresa tu número de teléfono de ToDus</string>
+    <string name="phone_prefix">+53</string>
+    <string name="phone_hint">Número de teléfono</string>
+    <string name="no_downloads">No hay descargas</string>
+    <string name="add_download_hint">Toca + para agregar una</string>
+    <string name="settings_title">Configuracion</string>
+    <string name="storage_location">Ubicacion de almacenamiento</string>
+    <string name="simultaneous_downloads">Descargas simultaneas</string>
+    <string name="threads_per_download">Hilos por descarga</string>
+    <string name="dark_theme">Tema oscuro</string>
+    <string name="dark_theme_enabled">Activado por defecto</string>
+    <string name="xmpp_connection">Conexion XMPP</string>
+    <string name="clear_completed">Limpiar completados</string>
+    <string name="total_downloaded">Total descargados</string>
+    <string name="space_used">Espacio usado</string>
+    <string name="add_video">Agregar video</string>
+    <string name="url_hint">https://...</string>
+    <string name="analyzing">Analizando enlace...</string>
+    <string name="downloading">Descargando video...</string>
+    <string name="processing_thumb">Procesando thumbnail...</string>
+    <string name="uploading">Subiendo video...</string>
+    <string name="ready">Video listo</string>
+    <string name="error_processing">Error al procesar</string>
+    <string name="retry">Reintentar</string>
+    <string name="cancel">Cancelar</string>
+</resources>
