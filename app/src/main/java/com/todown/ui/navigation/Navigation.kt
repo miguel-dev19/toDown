@@ -61,18 +61,9 @@ fun ToDownNavigation(navController: NavHostController) {
             val phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "")
             val completedCount = remember { mutableStateOf(0) }
             val totalSize = remember { mutableStateOf(0L) }
-            val scope = rememberCoroutineScope()
-            
-            val ketch = remember {
-                com.ketch.Ketch.builder()
-                    .setEnableAutoStartDownload(true)
-                    .setEnableParallelDownload(true)
-                    .setDefaultParallelCount(3)
-                    .build(context)
-            }
             
             val database = remember { DownloadDatabase.getInstance(context) }
-            val downloadRepository = remember { DownloadRepository(ketch, database.downloadDao()) }
+            val downloadRepository = remember { DownloadRepository(database.downloadDao()) }
             
             val homeViewModel: HomeViewModel = viewModel(
                 factory = object : androidx.lifecycle.ViewModelProvider.Factory {

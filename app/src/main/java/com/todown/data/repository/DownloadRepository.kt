@@ -1,16 +1,15 @@
 package com.todown.data.repository
 
 import android.os.Environment
+import com.downloader.PRDownloader
 import com.todown.data.local.DownloadDao
 import com.todown.data.local.DownloadEntity
 import com.todown.network.xmpp.VideoData
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
 import java.io.File
 
 class DownloadRepository(
-    private val ketch: com.ketch.Ketch,
     private val downloadDao: DownloadDao
 ) {
     
@@ -21,23 +20,50 @@ class DownloadRepository(
         onProgress: (Float) -> Unit,
         onComplete: (File) -> Unit,
         onError: (Throwable) -> Unit
-    ): String = withContext(Dispatchers.IO) {
+    ): Int = withContext(Dispatchers.IO) {
         val fileName = sanitizeFileName(videoData.fileName)
         val destinationDir = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_MOVIES
         ).absolutePath + "/toDown/"
         File(destinationDir).mkdirs()
         
-        val downloadId = ketch.download(
-            url = videoData.url,
-            fileName = fileName,
-            path = destinationDir,
-            tag = "video_download",
-            headers = mapOf("User-Agent" to "toDown/1.0")
-        )
+        val downloadId = PRDownloader.download(
+            videoData.url,
+            destinationDir,
+            fileName
+        ).build()
+        .setOnProgressListener { progress ->
+            val percent = (progress.currentBytes.toFloat() / progress.totalBytes.toFloat() * 100)
+            launch(Dispatchers.Main) { onProgress(percent) }
+            launch(Dispatchers.IO) {
+                downloadDao.getByDownloadId(downloadId.toString())?.let {
+                    downloadDao.update(it.copy(progress = percent.toInt(), downloadedSize = progress.currentBytes))
+                }
+            }
+        }
+        .start(object : com.downloader.OnDownloadListener {
+            override fun onDownloadComplete() {
+                val file = File(destinationDir + fileName)
+                launch(Dispatchers.IO) {
+                    downloadDao.getByDownloadId(downloadId.toString())?.let {
+                        downloadDao.update(it.copy(progress = 100, status = "completed"))
+                    }
+                }
+                launch(Dispatchers.Main) { onComplete(file) }
+            }
+            
+            override fun onError(error: com.downloader.Error?) {
+                launch(Dispatchers.IO) {
+                    downloadDao.getByDownloadId(downloadId.toString())?.let {
+                        downloadDao.update(it.copy(status = "error"))
+                    }
+                }
+                launch(Dispatchers.Main) { onError(Throwable(error?.serverErrorMessage ?: "Error")) }
+            }
+        })
         
         val entity = DownloadEntity(
-            downloadId = downloadId,
+            downloadId = downloadId.toString(),
             url = videoData.url,
             fileName = fileName,
             filePath = destinationDir + fileName,
@@ -49,41 +75,41 @@ class DownloadRepository(
         )
         downloadDao.insert(entity)
         
-        CoroutineScope(Dispatchers.IO).launch {
-            ketch.observeDownloadById(downloadId)
-                .flowOn(Dispatchers.IO)
-                .collect { downloadModel ->
-                    when {
-                        downloadModel.isCompleted -> {
-                            updateDatabase(downloadId, 100, "completed")
-                            withContext(Dispatchers.Main) { onComplete(File(downloadModel.filePath)) }
-                        }
-                        downloadModel.isFailed -> {
-                            updateDatabase(downloadId, 0, "error")
-                            withContext(Dispatchers.Main) { onError(Throwable(downloadModel.errorMessage)) }
-                        }
-                        else -> {
-                            updateDatabase(downloadId, downloadModel.progress, "downloading")
-                            withContext(Dispatchers.Main) { onProgress(downloadModel.progress / 100f) }
-                        }
-                    }
-                }
-        }
         downloadId
     }
     
-    private suspend fun updateDatabase(downloadId: String, progress: Int, status: String) {
+    suspend fun pauseDownload(downloadId: String) = withContext(Dispatchers.IO) {
+        PRDownloader.pause(downloadId.toInt())
         downloadDao.getByDownloadId(downloadId)?.let {
-            downloadDao.update(it.copy(progress = progress, status = status))
+            downloadDao.update(it.copy(status = "paused"))
         }
     }
     
-    suspend fun pauseDownload(downloadId: String) = withContext(Dispatchers.IO) { ketch.pause(downloadId) }
-    suspend fun resumeDownload(downloadId: String) = withContext(Dispatchers.IO) { ketch.resume(downloadId) }
-    suspend fun cancelDownload(downloadId: String) = withContext(Dispatchers.IO) { ketch.cancel(downloadId) }
-    suspend fun clearCompleted() = withContext(Dispatchers.IO) { downloadDao.clearCompleted() }
-    suspend fun getCompletedCount(): Int = withContext(Dispatchers.IO) { downloadDao.getCompletedCount() }
-    suspend fun getTotalSize(): Long = withContext(Dispatchers.IO) { downloadDao.getTotalSize() }
+    suspend fun resumeDownload(downloadId: String) = withContext(Dispatchers.IO) {
+        PRDownloader.resume(downloadId.toInt())
+        downloadDao.getByDownloadId(downloadId)?.let {
+            downloadDao.update(it.copy(status = "downloading"))
+        }
+    }
+    
+    suspend fun cancelDownload(downloadId: String) = withContext(Dispatchers.IO) {
+        PRDownloader.cancel(downloadId.toInt())
+        downloadDao.getByDownloadId(downloadId)?.let {
+            downloadDao.update(it.copy(status = "canceled"))
+        }
+    }
+    
+    suspend fun clearCompleted() = withContext(Dispatchers.IO) {
+        downloadDao.clearCompleted()
+    }
+    
+    suspend fun getCompletedCount(): Int = withContext(Dispatchers.IO) {
+        downloadDao.getCompletedCount()
+    }
+    
+    suspend fun getTotalSize(): Long = withContext(Dispatchers.IO) {
+        downloadDao.getTotalSize()
+    }
     
     private fun sanitizeFileName(name: String): String {
         return name.replace(Regex("[^a-zA-Z0-9._-]"), "_")
