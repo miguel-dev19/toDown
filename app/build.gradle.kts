@@ -74,10 +74,10 @@ dependencies {
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
-    // Ketch
-    implementation("com.github.khaled-hamam:Ketch:2.8.0")
+    // PRDownloader
+    implementation("com.mindorks.android:prdownloader:0.6.0")
     
-    // WorkManager (requerido por Ketch)
+    // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     
     // ExoPlayer
