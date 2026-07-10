@@ -1,7 +1,12 @@
 package com.todown.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,24 +14,61 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.todown.data.local.PreferencesManager
 import com.todown.network.xmpp.XMPPConnectionState
 import com.todown.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
     storagePath: String,
-    simultaneousDownloads: Int,
-    threadsPerDownload: Int,
     connectionState: XMPPConnectionState,
     phoneNumber: String,
-    onChangeStoragePath: () -> Unit,
-    onSimultaneousDownloadsChange: (Int) -> Unit,
-    onThreadsPerDownloadChange: (Int) -> Unit
+    preferencesManager: PreferencesManager,
+    onChangeStoragePath: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var currentPath by remember { mutableStateOf(storagePath) }
+    
+    // Permisos de almacenamiento
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.values.all { it }) {
+            // Permisos concedidos
+        }
+    }
+    
+    // Selector de directorio
+    val directoryPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        uri?.let {
+            val path = it.toString()
+            currentPath = path
+            scope.launch {
+                preferencesManager.saveStoragePath(path)
+                onChangeStoragePath(path)
+            }
+        }
+    }
+    
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(
+            arrayOf(
+                android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        )
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -46,94 +88,173 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SettingsCard(Icons.Default.Folder, "Ubicacion de almacenamiento", storagePath) {
-                Button(onClick = onChangeStoragePath, colors = ButtonDefaults.buttonColors(containerColor = Blue)) {
-                    Text("Cambiar")
-                }
-            }
+            // Seccion: Almacenamiento
+            Text(
+                "Almacenamiento",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Blue,
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+            )
             
-            SettingsCard(Icons.Default.Downloading, "Descargas simultaneas", simultaneousDownloads.toString()) {
-                Slider(
-                    value = simultaneousDownloads.toFloat(),
-                    onValueChange = { onSimultaneousDownloadsChange(it.toInt()) },
-                    valueRange = 1f..10f,
-                    steps = 8,
-                    colors = SliderDefaults.colors(thumbColor = Blue, activeTrackColor = Blue)
-                )
-            }
-            
-            SettingsCard(Icons.Default.Speed, "Hilos por descarga", threadsPerDownload.toString()) {
-                Slider(
-                    value = threadsPerDownload.toFloat(),
-                    onValueChange = { onThreadsPerDownloadChange(it.toInt()) },
-                    valueRange = 1f..8f,
-                    steps = 6,
-                    colors = SliderDefaults.colors(thumbColor = Blue, activeTrackColor = Blue)
-                )
-            }
-            
-            SettingsCard(Icons.Default.DarkMode, "Tema oscuro", "Activado por defecto") {
-                Switch(
-                    checked = true,
-                    onCheckedChange = { },
-                    enabled = false,
-                    colors = SwitchDefaults.colors(checkedThumbColor = Blue, checkedTrackColor = Blue.copy(alpha = 0.3f))
-                )
-            }
-            
-            SettingsCard(
-                Icons.Default.Cloud,
-                "Conexion XMPP",
-                when (connectionState) {
-                    is XMPPConnectionState.Connected -> "Conectado - $phoneNumber"
-                    is XMPPConnectionState.Connecting -> "Conectando..."
-                    is XMPPConnectionState.Disconnected -> "Desconectado"
-                    is XMPPConnectionState.Error -> "Error: ${connectionState.message}"
-                }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Surface),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(
-                    when (connectionState) {
-                        is XMPPConnectionState.Connected -> Icons.Default.CheckCircle
-                        is XMPPConnectionState.Connecting -> Icons.Default.Sync
-                        is XMPPConnectionState.Disconnected -> Icons.Default.Cancel
-                        is XMPPConnectionState.Error -> Icons.Default.Error
-                    },
-                    null, Modifier.size(24.dp),
-                    tint = when (connectionState) {
-                        is XMPPConnectionState.Connected -> Green
-                        is XMPPConnectionState.Connecting -> Yellow
-                        else -> Red
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = CircleShape,
+                            color = Blue.copy(alpha = 0.12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Folder, null, tint = Blue, modifier = Modifier.size(22.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Ubicacion de descargas",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = White
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                currentPath,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Gray,
+                                maxLines = 1
+                            )
+                        }
+                        FilledTonalButton(
+                            onClick = { directoryPicker.launch(null) },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = Blue.copy(alpha = 0.15f),
+                                contentColor = Blue
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Cambiar", fontWeight = FontWeight.Medium)
+                        }
                     }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SettingsCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    trailing: @Composable () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Icon(icon, null, tint = Blue, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = White)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Gray)
                 }
-                trailing()
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Seccion: Conexion
+            Text(
+                "Conexion",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Blue,
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+            )
+            
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Surface),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Estado XMPP
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = CircleShape,
+                            color = when (connectionState) {
+                                is XMPPConnectionState.Connected -> Green.copy(alpha = 0.12f)
+                                is XMPPConnectionState.Connecting -> Yellow.copy(alpha = 0.12f)
+                                else -> Red.copy(alpha = 0.12f)
+                            }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    when (connectionState) {
+                                        is XMPPConnectionState.Connected -> Icons.Default.CheckCircle
+                                        is XMPPConnectionState.Connecting -> Icons.Default.Sync
+                                        is XMPPConnectionState.Disconnected -> Icons.Default.Cancel
+                                        is XMPPConnectionState.Error -> Icons.Default.Error
+                                    },
+                                    null,
+                                    Modifier.size(22.dp),
+                                    tint = when (connectionState) {
+                                        is XMPPConnectionState.Connected -> Green
+                                        is XMPPConnectionState.Connecting -> Yellow
+                                        else -> Red
+                                    }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                when (connectionState) {
+                                    is XMPPConnectionState.Connected -> "Conectado"
+                                    is XMPPConnectionState.Connecting -> "Conectando..."
+                                    is XMPPConnectionState.Disconnected -> "Desconectado"
+                                    is XMPPConnectionState.Error -> "Error"
+                                },
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = White
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                phoneNumber,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Gray
+                            )
+                        }
+                    }
+                    
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = SurfaceVariant
+                    )
+                    
+                    // Version
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = CircleShape,
+                            color = Purple.copy(alpha = 0.12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Info, null, tint = Purple, modifier = Modifier.size(22.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "toDown v1.0",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = White
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                "Gestor de descargas ToDus",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Gray
+                            )
+                        }
+                    }
+                }
             }
         }
     }

@@ -24,7 +24,17 @@ fun ToDownNavigation(navController: NavHostController) {
     val xmppDataSource = remember { XMPPDataSource() }
     val jwtAuthenticator = remember { JwtAuthenticator() }
     
-    NavHost(navController = navController, startDestination = "welcome") {
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(
+                onFinished = {
+                    navController.navigate("welcome") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            )
+        }
+        
         composable("welcome") {
             WelcomeScreen(
                 onContinue = { navController.navigate("login") { popUpTo("welcome") { inclusive = true } } }
@@ -81,10 +91,12 @@ fun ToDownNavigation(navController: NavHostController) {
             val isProcessing by homeViewModel.isProcessing.collectAsState()
             
             LaunchedEffect(Unit) {
-                val jwt = preferencesManager.jwtToken.collect { it } as? String
-                val phone = preferencesManager.phoneNumber.collect { it } as? String
-                if (jwt != null && phone != null) {
-                    xmppDataSource.connect(phone, jwt)
+                preferencesManager.jwtToken.collect { jwt ->
+                    preferencesManager.phoneNumber.collect { phone ->
+                        if (jwt != null && phone != null) {
+                            xmppDataSource.connect(phone, jwt)
+                        }
+                    }
                 }
             }
             
@@ -119,16 +131,15 @@ fun ToDownNavigation(navController: NavHostController) {
         }
         
         composable("settings") {
+            val storagePath = preferencesManager.storagePath.collectAsState(initial = "Movies/toDown")
+            
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                storagePath = "Movies/toDown",
-                simultaneousDownloads = 3,
-                threadsPerDownload = 4,
+                storagePath = storagePath.value,
                 connectionState = xmppDataSource.connectionState.collectAsState().value,
                 phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "").value ?: "",
-                onChangeStoragePath = { },
-                onSimultaneousDownloadsChange = { },
-                onThreadsPerDownloadChange = { }
+                preferencesManager = preferencesManager,
+                onChangeStoragePath = { /* actualizado internamente */ }
             )
         }
         
