@@ -4,16 +4,11 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
-import com.downloader.PRDownloader
 
 class ToDownApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        
-        // Inicializar PRDownloader
-        PRDownloader.initialize(this)
-        
         createNotificationChannel()
     }
     

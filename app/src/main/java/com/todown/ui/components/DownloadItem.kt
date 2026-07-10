@@ -90,11 +90,7 @@ fun DownloadItem(
                             trackColor = SurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "${download.progress}%",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Gray
-                        )
+                        Text("${download.progress}%", style = MaterialTheme.typography.bodySmall, color = Gray)
                     }
                     "completed" -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
