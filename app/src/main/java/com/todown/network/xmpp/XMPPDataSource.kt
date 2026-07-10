@@ -77,7 +77,7 @@ class XMPPDataSource {
                     .setXmppDomain("im.todus.cu")
                     .setSecurityMode(ConnectionConfiguration.SecurityMode.required)
                     .setSocketFactory(sslContext.socketFactory)
-                    .setResource(Resourcepart.from("toDown"))
+                    .setResource(Resourcepart.from("Android"))
                     .setUsernameAndPassword(phone, jwt)
                     .build()
                 
