@@ -18,7 +18,7 @@ import com.todown.network.xmpp.XMPPConnectionState
 import com.todown.ui.components.DownloadItem
 import com.todown.ui.components.LinkBottomSheet
 import com.todown.ui.theme.*
-import com.todown.utils.FileUtils.formatFileSize
+import com.todown.utils.FileUtils
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,17 +62,11 @@ fun HomeScreen(
                                     color = Blue
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            phoneNumber.takeLast(4),
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            color = White
-                                        )
+                                        Text(phoneNumber.takeLast(4), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = White)
                                     }
                                 }
                                 Box(
-                                    modifier = Modifier
-                                        .size(16.dp).align(Alignment.BottomEnd)
+                                    modifier = Modifier.size(16.dp).align(Alignment.BottomEnd)
                                         .background(
                                             when (connectionState) {
                                                 is XMPPConnectionState.Connected -> Green
@@ -131,7 +125,7 @@ fun HomeScreen(
                     )
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.Storage, null, tint = Blue) },
-                        label = { Text(formatFileSize(totalSize)) },
+                        label = { Text(FileUtils.formatFileSize(totalSize)) },
                         selected = false,
                         onClick = { }
                     )
@@ -176,10 +170,7 @@ fun HomeScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { showBottomSheet = true },
-                    containerColor = Blue
-                ) {
+                FloatingActionButton(onClick = { showBottomSheet = true }, containerColor = Blue) {
                     Icon(Icons.Default.Add, "Agregar")
                 }
             }
@@ -225,4 +216,3 @@ fun HomeScreen(
         }
     }
 }
-
