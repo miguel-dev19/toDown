@@ -44,6 +44,13 @@ android {
     }
 }
 
+configurations {
+    all {
+        exclude(group = "xpp3", module = "xpp3_min")
+        exclude(group = "xpp3", module = "xpp3")
+    }
+}
+
 dependencies {
     // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
@@ -67,9 +74,18 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
     
     // Smack XMPP
-    implementation("org.igniterealtime.smack:smack-android-extensions:4.4.6")
-    implementation("org.igniterealtime.smack:smack-tcp:4.4.6")
-    implementation("org.igniterealtime.smack:smack-experimental:4.4.6")
+    implementation("org.igniterealtime.smack:smack-android-extensions:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
+    implementation("org.igniterealtime.smack:smack-tcp:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
+    implementation("org.igniterealtime.smack:smack-experimental:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
     
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
