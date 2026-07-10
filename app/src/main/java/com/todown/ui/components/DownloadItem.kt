@@ -83,8 +83,8 @@ fun DownloadItem(
                 
                 when (download.status) {
                     "downloading" -> {
-                        LinearProgressIndicator(
-                            progress = { download.progress / 100f },
+                        LinearProgressIndicator(progress = 
+                            download.progress / 100f,
                             modifier = Modifier.fillMaxWidth(),
                             color = Blue,
                             trackColor = SurfaceVariant

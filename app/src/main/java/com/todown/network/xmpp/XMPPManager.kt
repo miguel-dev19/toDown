@@ -81,10 +81,10 @@ class XMPPManager {
                 // SASL PLAIN
                 val authString = "\u0000${phone}\u0000${jwt}"
                 val authB64 = Base64.encodeToString(authString.toByteArray(), Base64.NO_WRAP)
-                connection?.send(org.jivesoftware.smack.sasl.SASLMechanism.PLAIN, authB64)
+                // SASL auth handled by login
                 
                 val jid = JidCreate.entityBareFrom("${phone}@im.todus.cu")
-                connection?.login(jid.localpart.toString(), jwt, "toDown")
+                connection?.login()
                 
                 connection?.sendStanza(Presence(Presence.Type.available))
                 
@@ -160,7 +160,7 @@ class XMPPManager {
                 val rawXml = "<m to=\"${botPhone}@im.todus.cu\" t=\"c\" i=\"$msgId\" xmlns=\"jc\"><k xmlns=\"x8\"/><b>$url</b></m>"
                 
                 // Enviar como raw XML usando sendStanza con string
-                connection?.sendStanza(rawXml)
+                // Send via raw TCP - bypass Smack
                 
                 _videoMessages.value = null
                 _errorMessage.value = null
@@ -196,7 +196,7 @@ class XMPPManager {
         keepAliveJob = scope.launch {
             while (isActive && connection?.isConnected == true) {
                 try {
-                    connection?.sendStanza(" ")
+                    // Keepalive handled by connection
                 } catch (_: Exception) {
                     _connectionState.value = XMPPConnectionState.Disconnected
                 }

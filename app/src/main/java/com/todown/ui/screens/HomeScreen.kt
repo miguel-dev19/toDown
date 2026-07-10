@@ -18,6 +18,7 @@ import com.todown.network.xmpp.XMPPConnectionState
 import com.todown.ui.components.DownloadItem
 import com.todown.ui.components.LinkBottomSheet
 import com.todown.ui.theme.*
+import com.todown.utils.FileUtils.formatFileSize
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,7 +131,7 @@ fun HomeScreen(
                     )
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.Storage, null, tint = Blue) },
-                        label = { Text(formatSize(totalSize)) },
+                        label = { Text(formatFileSize(totalSize)) },
                         selected = false,
                         onClick = { }
                     )
@@ -225,9 +226,3 @@ fun HomeScreen(
     }
 }
 
-fun formatSize(bytes: Long): String = when {
-    bytes >= 1_000_000_000 -> "%.2f GB".format(bytes / 1_000_000_000.0)
-    bytes >= 1_000_000 -> "%.2f MB".format(bytes / 1_000_000.0)
-    bytes >= 1_000 -> "%.2f KB".format(bytes / 1_000.0)
-    else -> "$bytes B"
-}

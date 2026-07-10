@@ -19,8 +19,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.todown.ui.theme.Blue
+import com.todown.utils.FileUtils.formatFileSize
 import com.todown.ui.theme.Gray
+import com.todown.utils.FileUtils.formatFileSize
 import com.todown.ui.theme.White
+import com.todown.utils.FileUtils.formatFileSize
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,7 +88,7 @@ fun VideoPlayerScreen(
                 Column {
                     Text(fileName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(formatSize(fileSize), style = MaterialTheme.typography.bodySmall, color = Gray)
+                    Text(formatFileSize(fileSize), style = MaterialTheme.typography.bodySmall, color = Gray)
                 }
                 IconButton(onClick = onShare) {
                     Icon(Icons.Default.Share, "Compartir", tint = Blue)
@@ -95,9 +98,3 @@ fun VideoPlayerScreen(
     }
 }
 
-fun formatSize(bytes: Long): String = when {
-    bytes >= 1_000_000_000 -> "%.2f GB".format(bytes / 1_000_000_000.0)
-    bytes >= 1_000_000 -> "%.2f MB".format(bytes / 1_000_000.0)
-    bytes >= 1_000 -> "%.2f KB".format(bytes / 1_000.0)
-    else -> "$bytes B"
-}
