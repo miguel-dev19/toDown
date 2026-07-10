@@ -10,16 +10,16 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val downloadRepository: DownloadRepository,
-    private val xmppManager: XMPPManager
+    private val xmppDataSource: XMPPDataSource
 ) : ViewModel() {
     
     val downloads: StateFlow<List<DownloadEntity>> = downloadRepository.getAllDownloads()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
-    val connectionState: StateFlow<XMPPConnectionState> = xmppManager.connectionState
-    val botState: StateFlow<BotState?> = xmppManager.botState
-    val errorMessage: StateFlow<String?> = xmppManager.errorMessage
-    val videoData: StateFlow<VideoData?> = xmppManager.videoMessages
+    val connectionState: StateFlow<XMPPConnectionState> = xmppDataSource.connectionState
+    val botState: StateFlow<BotState?> = xmppDataSource.botState
+    val errorMessage: StateFlow<String?> = xmppDataSource.errorMessage
+    val videoData: StateFlow<VideoData?> = xmppDataSource.videoMessages
     
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing
@@ -27,11 +27,11 @@ class HomeViewModel(
     fun sendUrlToBot(url: String) {
         viewModelScope.launch {
             _isProcessing.value = true
-            xmppManager.clearVideoData()
-            xmppManager.sendUrlToBot(url)
+            xmppDataSource.clearVideoData()
+            xmppDataSource.sendUrlToBot(url)
             
             launch {
-                xmppManager.videoMessages
+                xmppDataSource.videoMessages
                     .filterNotNull()
                     .first()
                     .let { video -> startDownload(video) }
@@ -46,7 +46,7 @@ class HomeViewModel(
                 onProgress = { },
                 onComplete = {
                     _isProcessing.value = false
-                    xmppManager.clearVideoData()
+                    xmppDataSource.clearVideoData()
                 },
                 onError = {
                     _isProcessing.value = false
@@ -73,6 +73,6 @@ class HomeViewModel(
     
     fun clearBotState() {
         _isProcessing.value = false
-        xmppManager.clearVideoData()
+        xmppDataSource.clearVideoData()
     }
 }

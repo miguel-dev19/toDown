@@ -33,15 +33,27 @@ android {
     composeOptions { kotlinCompilerExtensionVersion = "1.5.5" }
 }
 
+configurations {
+    all {
+        exclude(group = "xpp3", module = "xpp3_min")
+        exclude(group = "xpp3", module = "xpp3")
+    }
+}
+
 dependencies {
+    // Compose
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    
+    // Activity & Navigation
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.navigation:navigation-compose:2.7.5")
+    
+    // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     
@@ -50,7 +62,25 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     
-    // OkHttp
+    // Smack XMPP
+    implementation("org.igniterealtime.smack:smack-android-extensions:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
+    implementation("org.igniterealtime.smack:smack-tcp:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
+    implementation("org.igniterealtime.smack:smack-experimental:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
+    implementation("org.igniterealtime.smack:smack-extensions:4.4.6") {
+        exclude(group = "xpp3", module = "xpp3")
+        exclude(group = "xpp3", module = "xpp3_min")
+    }
+    
+    // OkHttp (solo para JWT)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // ExoPlayer

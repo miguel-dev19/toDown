@@ -11,7 +11,7 @@ import com.todown.data.local.DownloadDatabase
 import com.todown.data.local.PreferencesManager
 import com.todown.data.repository.DownloadRepository
 import com.todown.network.auth.JwtAuthenticator
-import com.todown.network.xmpp.XMPPManager
+import com.todown.network.xmpp.XMPPDataSource
 import com.todown.ui.screens.*
 import com.todown.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
@@ -21,7 +21,7 @@ import java.io.File
 fun ToDownNavigation(navController: NavHostController) {
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
-    val xmppManager = remember { XMPPManager() }
+    val xmppDataSource = remember { XMPPDataSource() }
     val jwtAuthenticator = remember { JwtAuthenticator() }
     
     NavHost(navController = navController, startDestination = "welcome") {
@@ -69,7 +69,7 @@ fun ToDownNavigation(navController: NavHostController) {
                 factory = object : androidx.lifecycle.ViewModelProvider.Factory {
                     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return HomeViewModel(downloadRepository, xmppManager) as T
+                        return HomeViewModel(downloadRepository, xmppDataSource) as T
                     }
                 }
             )
@@ -81,12 +81,10 @@ fun ToDownNavigation(navController: NavHostController) {
             val isProcessing by homeViewModel.isProcessing.collectAsState()
             
             LaunchedEffect(Unit) {
-                preferencesManager.jwtToken.collect { jwt ->
-                    preferencesManager.phoneNumber.collect { phone ->
-                        if (jwt != null && phone != null) {
-                            xmppManager.connect(phone, jwt)
-                        }
-                    }
+                val jwt = preferencesManager.jwtToken.collect { it } as? String
+                val phone = preferencesManager.phoneNumber.collect { it } as? String
+                if (jwt != null && phone != null) {
+                    xmppDataSource.connect(phone, jwt)
                 }
             }
             
@@ -121,22 +119,16 @@ fun ToDownNavigation(navController: NavHostController) {
         }
         
         composable("settings") {
-            val storagePath = preferencesManager.storagePath.collectAsState(initial = "Movies/toDown")
-            val simultaneousDownloads = preferencesManager.simultaneousDownloads.collectAsState(initial = 3)
-            val threadsPerDownload = preferencesManager.threadsPerDownload.collectAsState(initial = 4)
-            val phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "")
-            val scope = rememberCoroutineScope()
-            
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                storagePath = storagePath.value,
-                simultaneousDownloads = simultaneousDownloads.value,
-                threadsPerDownload = threadsPerDownload.value,
-                connectionState = xmppManager.connectionState.collectAsState().value,
-                phoneNumber = phoneNumber.value ?: "",
+                storagePath = "Movies/toDown",
+                simultaneousDownloads = 3,
+                threadsPerDownload = 4,
+                connectionState = xmppDataSource.connectionState.collectAsState().value,
+                phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "").value ?: "",
                 onChangeStoragePath = { },
-                onSimultaneousDownloadsChange = { scope.launch { preferencesManager.saveSimultaneousDownloads(it) } },
-                onThreadsPerDownloadChange = { scope.launch { preferencesManager.saveThreadsPerDownload(it) } }
+                onSimultaneousDownloadsChange = { },
+                onThreadsPerDownloadChange = { }
             )
         }
         
