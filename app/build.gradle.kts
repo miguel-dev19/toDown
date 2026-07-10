@@ -19,10 +19,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     
@@ -31,40 +28,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    
-    buildFeatures {
-        compose = true
-    }
-    
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.5"
-    }
-}
-
-configurations {
-    all {
-        exclude(group = "xpp3", module = "xpp3_min")
-        exclude(group = "xpp3", module = "xpp3")
-    }
+    kotlinOptions { jvmTarget = "17" }
+    buildFeatures { compose = true }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.5" }
 }
 
 dependencies {
-    // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    
-    // Activity & Navigation
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.navigation:navigation-compose:2.7.5")
-    
-    // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     
@@ -73,25 +50,8 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     
-    // Smack XMPP
-    implementation("org.igniterealtime.smack:smack-android-extensions:4.4.6") {
-        exclude(group = "xpp3", module = "xpp3")
-        exclude(group = "xpp3", module = "xpp3_min")
-    }
-    implementation("org.igniterealtime.smack:smack-tcp:4.4.6") {
-        exclude(group = "xpp3", module = "xpp3")
-        exclude(group = "xpp3", module = "xpp3_min")
-    }
-    implementation("org.igniterealtime.smack:smack-experimental:4.4.6") {
-        exclude(group = "xpp3", module = "xpp3")
-        exclude(group = "xpp3", module = "xpp3_min")
-    }
-    
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     
     // ExoPlayer
     implementation("androidx.media3:media3-exoplayer:1.2.1")
@@ -102,4 +62,7 @@ dependencies {
     
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
