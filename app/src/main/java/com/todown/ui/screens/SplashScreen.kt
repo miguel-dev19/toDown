@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,16 +18,20 @@ import com.todown.ui.theme.Blue
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onFinished: () -> Unit) {
+fun SplashScreen(
+    hasSession: Boolean?,
+    onFinished: (goToHome: Boolean) -> Unit
+) {
     val scale = remember { Animatable(0f) }
     
     LaunchedEffect(Unit) {
         scale.animateTo(
             targetValue = 1f,
-            animationSpec = tween(800, easing = FastOutSlowInEasing)
+            animationSpec = tween(700, easing = FastOutSlowInEasing)
         )
-        delay(400)
-        onFinished()
+        delay(500)
+        // Si ya hay sesion, ir directo a Home
+        onFinished(hasSession == true)
     }
     
     Box(
@@ -41,7 +44,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo circular
+            // Logo circular con animacion
             Surface(
                 modifier = Modifier
                     .size(100.dp)
@@ -60,23 +63,15 @@ fun SplashScreen(onFinished: () -> Unit) {
                 }
             }
             
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             Text(
                 text = "toDown",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 38.sp
+                    fontSize = 36.sp
                 ),
                 color = MaterialTheme.colorScheme.surface
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "Gestor de descargas",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
             )
         }
     }

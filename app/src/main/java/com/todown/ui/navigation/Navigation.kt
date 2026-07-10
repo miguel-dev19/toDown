@@ -24,12 +24,27 @@ fun ToDownNavigation(navController: NavHostController) {
     val xmppDataSource = remember { XMPPDataSource() }
     val jwtAuthenticator = remember { JwtAuthenticator() }
     
+    // Verificar si hay sesion guardada
+    val hasSession = remember { mutableStateOf<Boolean?>(null) }
+    
+    LaunchedEffect(Unit) {
+        val jwt = preferencesManager.jwtToken.collect { it }
+        hasSession.value = jwt != null
+    }
+    
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
             SplashScreen(
-                onFinished = {
-                    navController.navigate("welcome") {
-                        popUpTo("splash") { inclusive = true }
+                hasSession = hasSession.value,
+                onFinished = { goToHome ->
+                    if (goToHome) {
+                        navController.navigate("home") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("welcome") {
+                            popUpTo("splash") { inclusive = true }
+                        }
                     }
                 }
             )
@@ -55,7 +70,9 @@ fun ToDownNavigation(navController: NavHostController) {
                             preferencesManager.saveJwtToken(jwt)
                             preferencesManager.savePhoneNumber(phone)
                             isLoading = false
-                            navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                            navController.navigate("home") {
+                                popUpTo("welcome") { inclusive = true }
+                            }
                         }.onFailure {
                             isLoading = false
                             errorMessage = "Error de autenticacion"
@@ -90,13 +107,12 @@ fun ToDownNavigation(navController: NavHostController) {
             val errorMessage by homeViewModel.errorMessage.collectAsState()
             val isProcessing by homeViewModel.isProcessing.collectAsState()
             
+            // Auto-conectar XMPP al iniciar
             LaunchedEffect(Unit) {
-                preferencesManager.jwtToken.collect { jwt ->
-                    preferencesManager.phoneNumber.collect { phone ->
-                        if (jwt != null && phone != null) {
-                            xmppDataSource.connect(phone, jwt)
-                        }
-                    }
+                val jwt = preferencesManager.jwtToken.collect { it }
+                val phone = preferencesManager.phoneNumber.collect { it }
+                if (jwt != null && phone != null) {
+                    xmppDataSource.connect(phone, jwt)
                 }
             }
             
@@ -139,7 +155,7 @@ fun ToDownNavigation(navController: NavHostController) {
                 connectionState = xmppDataSource.connectionState.collectAsState().value,
                 phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "").value ?: "",
                 preferencesManager = preferencesManager,
-                onChangeStoragePath = { /* actualizado internamente */ }
+                onChangeStoragePath = { }
             )
         }
         

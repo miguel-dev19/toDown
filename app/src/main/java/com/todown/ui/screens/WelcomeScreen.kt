@@ -11,13 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.todown.ui.theme.Blue
-import com.todown.ui.theme.SurfaceVariant
 import kotlinx.coroutines.delay
 
 @Composable
@@ -42,74 +40,65 @@ fun WelcomeScreen(onContinue: () -> Unit) {
         ) {
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(animationSpec = tween(600)) + scaleIn(initialScale = 0.5f, animationSpec = tween(600))
+                enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.5f, tween(600))
             ) {
-                // Logo circular
                 Surface(
-                    modifier = Modifier.size(120.dp),
+                    modifier = Modifier.size(110.dp),
                     shape = CircleShape,
                     color = Blue,
-                    shadowElevation = 12.dp
+                    shadowElevation = 10.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.CloudDownload,
-                            contentDescription = null,
-                            modifier = Modifier.size(60.dp),
+                            Icons.Default.CloudDownload, null,
+                            modifier = Modifier.size(54.dp),
                             tint = MaterialTheme.colorScheme.surface
                         )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(animationSpec = tween(800, delayMillis = 300))
+                enter = fadeIn(tween(800, delayMillis = 300))
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "toDown",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 42.sp
-                        ),
-                        color = Blue
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Text(
-                        text = "Descarga videos desde ToDus\nde forma rapida y sencilla",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 24.sp
-                    )
-                }
+                Text(
+                    text = "Bienvenido a toDown",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
             
-            Spacer(modifier = Modifier.height(56.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(animationSpec = tween(800, delayMillis = 600)) + 
-                        slideInVertically(animationSpec = tween(800, delayMillis = 600)) { it }
+                enter = fadeIn(tween(800, delayMillis = 500))
+            ) {
+                Text(
+                    text = "Inicia sesion con tu numero de ToDus\npara comenzar a descargar videos",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 24.sp
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            AnimatedVisibility(
+                visible = showContent,
+                enter = fadeIn(tween(800, delayMillis = 700)) + slideInVertically(tween(800, delayMillis = 700)) { it }
             ) {
                 Button(
                     onClick = onContinue,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Blue),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = "Continuar",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
+                    Text("Iniciar sesion", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                 }
             }
         }
