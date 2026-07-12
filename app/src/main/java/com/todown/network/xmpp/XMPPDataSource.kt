@@ -1,6 +1,5 @@
 package com.todown.network.xmpp
 
-import android.util.Base64
 import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,23 +9,39 @@ import org.jivesoftware.smack.filter.StanzaFilter
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smack.packet.Presence
 import org.jivesoftware.smack.packet.Stanza
-import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserFactory
-import java.io.StringReader
 import java.util.*
 import javax.net.ssl.SSLContext
+
+// Clases de datos compartidas
+sealed class XMPPConnectionState {
+    object Connecting : XMPPConnectionState()
+    object Connected : XMPPConnectionState()
+    object Disconnected : XMPPConnectionState()
+    data class Error(val message: String) : XMPPConnectionState()
+}
+
+data class VideoData(
+    val url: String,
+    val fileName: String,
+    val size: Long,
+    val duration: Int,
+    val thumbnailUrl: String,
+    val title: String
+)
+
+enum class BotState {
+    ANALYZING, DOWNLOADING, PROCESSING, UPLOADING, READY, ERROR
+}
 
 class XMPPDataSource {
     
     private var connection: XMPPTCPConnection? = null
     private var pingManager: PingManager? = null
-    private var reconnectionManager: ReconnectionManager? = null
     
     private val _connectionState = MutableStateFlow<XMPPConnectionState>(XMPPConnectionState.Disconnected)
     val connectionState: StateFlow<XMPPConnectionState> = _connectionState
@@ -44,23 +59,6 @@ class XMPPDataSource {
     private val processedMessages = mutableSetOf<String>()
     private var currentPhone: String = ""
     private val botPhone = "5350155246"
-    
-    init {
-        registerProviders()
-    }
-    
-    private fun registerProviders() {
-        // Video extension (lo que recibimos del bot)
-        ProviderManager.addExtensionProvider("video", "video:n", object : ExtensionElementProvider<ExtensionElement> {
-            override fun parse(parser: XmlPullParser, initialDepth: Int, depth: Int): ExtensionElement {
-                return object : ExtensionElement {
-                    override fun getNamespace(): String = "video:n"
-                    override fun getElementName(): String = "video"
-                    override fun toXML(): CharSequence = ""
-                }
-            }
-        })
-    }
     
     fun connect(phone: String, jwt: String) {
         currentPhone = phone
@@ -85,22 +83,20 @@ class XMPPDataSource {
                 connection?.connect()
                 connection?.login()
                 
-                // Presence
                 connection?.sendStanza(Presence(Presence.Type.available))
                 
-                // Ping Manager (14s como ToDus)
                 pingManager = PingManager.getInstanceFor(connection)
                 pingManager?.pingInterval = 14
                 
-                // Reconnection Manager
-                reconnectionManager = ReconnectionManager.getInstanceFor(connection)
-                reconnectionManager?.enableAutomaticReconnection()
-                reconnectionManager?.setFixedDelay(3)
+                ReconnectionManager.getInstanceFor(connection).apply {
+                    enableAutomaticReconnection()
+                    setFixedDelay(3)
+                }
                 
                 setupListeners()
                 
                 _connectionState.value = XMPPConnectionState.Connected
-                Log.d("XMPP", "Conectado!")
+                Log.d("XMPP", "Conectado como Android")
                 
             } catch (e: Exception) {
                 Log.e("XMPP", "Error: ${e.message}", e)
@@ -112,34 +108,26 @@ class XMPPDataSource {
     private fun setupListeners() {
         connection?.addStanzaListener(
             { stanza -> handleStanza(stanza) },
-            StanzaFilter { stanza -> stanza is Message }
+            StanzaFilter { it is Message }
         )
     }
     
     private fun handleStanza(stanza: Stanza) {
         if (stanza !is Message) return
-        
         val xml = stanza.toXML().toString()
         
-        // Ignorar ACKs
         if (xml.contains("<rd ") || xml.contains("<dd ")) return
         
-        // Extraer msg_id
         val msgId = Regex("i='([^']+)'").find(xml)?.groupValues?.get(1) ?: return
         if (msgId in processedMessages) return
         processedMessages.add(msgId)
         if (processedMessages.size > 500) processedMessages.clear()
         
-        // Extraer remitente
         val from = Regex("f='([^']+)'").find(xml)?.groupValues?.get(1)
         val sender = from?.split("@")?.first()
-        
-        // Solo mensajes del bot
         if (sender != botPhone) return
         
-        // Extraer cuerpo
-        val body = Regex("<b[^>]*>(.*?)</b>", RegexOption.DOT_MATCHES_ALL)
-            .find(xml)?.groupValues?.get(1) ?: return
+        val body = Regex("<b[^>]*>(.*?)</b>", RegexOption.DOT_MATCHES_ALL).find(xml)?.groupValues?.get(1) ?: return
         
         Log.d("XMPP", "Bot: $body")
         
@@ -152,9 +140,8 @@ class XMPPDataSource {
             body.startsWith("\u274C") -> { _botState.value = BotState.ERROR; _errorMessage.value = body.removePrefix("\u274C").trim() }
         }
         
-        // Parsear video
         if (xml.contains("<video")) {
-            parseVideoMessage(xml, body)?.let {
+            parseVideo(xml, body)?.let {
                 _videoMessages.value = it
                 _botState.value = BotState.READY
             }
@@ -164,18 +151,15 @@ class XMPPDataSource {
     fun sendUrlToBot(url: String) {
         scope.launch {
             try {
-                val msgId = UUID.randomUUID().toString().replace("-", "").take(16)
                 val msg = Message()
-                msg.stanzaId = msgId
+                msg.stanzaId = UUID.randomUUID().toString().replace("-", "").take(16)
                 msg.to = JidCreate.bareFrom("${botPhone}@im.todus.cu")
                 msg.body = url
-                
                 connection?.sendStanza(msg)
                 
                 _videoMessages.value = null
                 _errorMessage.value = null
                 _botState.value = BotState.ANALYZING
-                
             } catch (e: Exception) {
                 _botState.value = BotState.ERROR
                 _errorMessage.value = "Error: ${e.message}"
@@ -183,19 +167,20 @@ class XMPPDataSource {
         }
     }
     
-    private fun parseVideoMessage(xml: String, body: String): VideoData? {
-        val videoTag = Regex("""<video\s+xmlns="video:n"[^>]*>""").find(xml)?.value ?: return null
-        val url = extract(videoTag, "url")?.replace("&amp;", "&") ?: return null
-        val fileName = extract(videoTag, "n") ?: "video.mp4"
-        val size = extract(videoTag, "s")?.toLongOrNull() ?: 0L
-        val duration = extract(videoTag, "d")?.toIntOrNull() ?: 0
-        val thumbnailUrl = extract(videoTag, "tnail") ?: ""
-        return VideoData(url, fileName, size, duration, thumbnailUrl, body.trim())
+    private fun parseVideo(xml: String, body: String): VideoData? {
+        val tag = Regex("""<video\s+xmlns="video:n"[^>]*>""").find(xml)?.value ?: return null
+        val url = attr(tag, "url")?.replace("&amp;", "&") ?: return null
+        return VideoData(
+            url = url,
+            fileName = attr(tag, "n") ?: "video.mp4",
+            size = attr(tag, "s")?.toLongOrNull() ?: 0L,
+            duration = attr(tag, "d")?.toIntOrNull() ?: 0,
+            thumbnailUrl = attr(tag, "tnail") ?: "",
+            title = body.trim()
+        )
     }
     
-    private fun extract(xml: String, attr: String): String? {
-        return Regex("""$attr="([^"]*)"""").find(xml)?.groupValues?.get(1)
-    }
+    private fun attr(xml: String, name: String) = Regex("""$name="([^"]*)"""").find(xml)?.groupValues?.get(1)
     
     fun disconnect() {
         scope.launch {

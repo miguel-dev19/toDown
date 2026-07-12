@@ -14,6 +14,7 @@ import com.todown.network.auth.JwtAuthenticator
 import com.todown.network.xmpp.XMPPDataSource
 import com.todown.ui.screens.*
 import com.todown.viewmodel.HomeViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -24,27 +25,23 @@ fun ToDownNavigation(navController: NavHostController) {
     val xmppDataSource = remember { XMPPDataSource() }
     val jwtAuthenticator = remember { JwtAuthenticator() }
     
-    // Verificar si hay sesion guardada
-    val hasSession = remember { mutableStateOf<Boolean?>(null) }
+    var hasSession by remember { mutableStateOf<Boolean?>(null) }
+    val scope = rememberCoroutineScope()
     
     LaunchedEffect(Unit) {
-        val jwt = preferencesManager.jwtToken.collect { it }
-        hasSession.value = jwt != null
+        val jwt = preferencesManager.jwtToken.first()
+        hasSession = jwt != null
     }
     
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
             SplashScreen(
-                hasSession = hasSession.value,
+                hasSession = hasSession,
                 onFinished = { goToHome ->
                     if (goToHome) {
-                        navController.navigate("home") {
-                            popUpTo("splash") { inclusive = true }
-                        }
+                        navController.navigate("home") { popUpTo("splash") { inclusive = true } }
                     } else {
-                        navController.navigate("welcome") {
-                            popUpTo("splash") { inclusive = true }
-                        }
+                        navController.navigate("welcome") { popUpTo("splash") { inclusive = true } }
                     }
                 }
             )
@@ -59,7 +56,6 @@ fun ToDownNavigation(navController: NavHostController) {
         composable("login") {
             var isLoading by remember { mutableStateOf(false) }
             var errorMessage by remember { mutableStateOf<String?>(null) }
-            val scope = rememberCoroutineScope()
             
             LoginScreen(
                 onLogin = { phone ->
@@ -85,9 +81,9 @@ fun ToDownNavigation(navController: NavHostController) {
         }
         
         composable("home") {
-            val phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "")
-            val completedCount = remember { mutableStateOf(0) }
-            val totalSize = remember { mutableStateOf(0L) }
+            val phoneNumber by preferencesManager.phoneNumber.collectAsState(initial = "")
+            val completedCount = remember { mutableIntStateOf(0) }
+            val totalSize = remember { mutableLongStateOf(0L) }
             
             val database = remember { DownloadDatabase.getInstance(context) }
             val downloadRepository = remember { DownloadRepository(database.downloadDao()) }
@@ -107,24 +103,23 @@ fun ToDownNavigation(navController: NavHostController) {
             val errorMessage by homeViewModel.errorMessage.collectAsState()
             val isProcessing by homeViewModel.isProcessing.collectAsState()
             
-            // Auto-conectar XMPP al iniciar
             LaunchedEffect(Unit) {
-                val jwt = preferencesManager.jwtToken.collect { it }
-                val phone = preferencesManager.phoneNumber.collect { it }
+                val jwt = preferencesManager.jwtToken.first()
+                val phone = preferencesManager.phoneNumber.first()
                 if (jwt != null && phone != null) {
                     xmppDataSource.connect(phone, jwt)
                 }
             }
             
             LaunchedEffect(downloads) {
-                completedCount.value = downloadRepository.getCompletedCount()
-                totalSize.value = downloadRepository.getTotalSize()
+                completedCount.intValue = downloadRepository.getCompletedCount()
+                totalSize.longValue = downloadRepository.getTotalSize()
             }
             
             HomeScreen(
                 downloads = downloads,
                 connectionState = connectionState,
-                phoneNumber = phoneNumber.value ?: "",
+                phoneNumber = phoneNumber ?: "",
                 onPlayVideo = { download ->
                     val file = File(download.filePath)
                     if (file.exists()) {
@@ -136,8 +131,8 @@ fun ToDownNavigation(navController: NavHostController) {
                 onCancelDownload = { homeViewModel.cancelDownload(it) },
                 onSendUrl = { homeViewModel.sendUrlToBot(it) },
                 onClearCompleted = { homeViewModel.clearCompleted() },
-                completedCount = completedCount.value,
-                totalSize = totalSize.value,
+                completedCount = completedCount.intValue,
+                totalSize = totalSize.longValue,
                 onSettingsClick = { navController.navigate("settings") },
                 isProcessing = isProcessing,
                 botState = botState,
@@ -147,13 +142,14 @@ fun ToDownNavigation(navController: NavHostController) {
         }
         
         composable("settings") {
-            val storagePath = preferencesManager.storagePath.collectAsState(initial = "Movies/toDown")
+            val storagePath by preferencesManager.storagePath.collectAsState(initial = "Movies/toDown")
+            val phone by preferencesManager.phoneNumber.collectAsState(initial = "")
             
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                storagePath = storagePath.value,
+                storagePath = storagePath,
                 connectionState = xmppDataSource.connectionState.collectAsState().value,
-                phoneNumber = preferencesManager.phoneNumber.collectAsState(initial = "").value ?: "",
+                phoneNumber = phone ?: "",
                 preferencesManager = preferencesManager,
                 onChangeStoragePath = { }
             )
