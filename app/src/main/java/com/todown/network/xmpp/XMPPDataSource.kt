@@ -68,14 +68,20 @@ class XMPPDataSource {
                 
                 val sslContext = SSLContext.getInstance("TLS")
                 sslContext.init(null, null, null)
+                val trustAll = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                    override fun checkClientTrusted(c: Array<java.security.cert.X509Certificate>, a: String) {}
+                    override fun checkServerTrusted(c: Array<java.security.cert.X509Certificate>, a: String) {}
+                    override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+                })
+                sslContext.init(null, trustAll, java.security.SecureRandom())
                 
                 val config = XMPPTCPConnectionConfiguration.builder()
                     .setHost("ws.todus.cu")
                     .setPort(5222)
                     .setXmppDomain("im.todus.cu")
-                    .setSecurityMode(ConnectionConfiguration.SecurityMode.required)
+                    .setSecurityMode(ConnectionConfiguration.SecurityMode.disabled)
                     .setSocketFactory(sslContext.socketFactory)
-                    .setResource(Resourcepart.from("Android"))
+                    .setResource(Resourcepart.from(phone.take(10) + "_Android"))
                     .setUsernameAndPassword(phone, jwt)
                     .build()
                 
