@@ -219,7 +219,7 @@ fun SettingsScreen(
                         }
                     }
                     
-                    HorizontalDivider(
+                    Divider(
                         modifier = Modifier.padding(vertical = 12.dp),
                         color = SurfaceVariant
                     )

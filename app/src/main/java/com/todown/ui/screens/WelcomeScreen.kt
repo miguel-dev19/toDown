@@ -1,6 +1,8 @@
 package com.todown.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -40,7 +42,8 @@ fun WelcomeScreen(onContinue: () -> Unit) {
         ) {
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.5f, tween(600))
+                enter = fadeIn(animationSpec = tween(600)) + 
+                        scaleIn(initialScale = 0.5f, animationSpec = tween(600))
             ) {
                 Surface(
                     modifier = Modifier.size(110.dp),
@@ -62,7 +65,7 @@ fun WelcomeScreen(onContinue: () -> Unit) {
             
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(tween(800, delayMillis = 300))
+                enter = fadeIn(animationSpec = tween(800, delayMillis = 300))
             ) {
                 Text(
                     text = "Bienvenido a toDown",
@@ -75,7 +78,7 @@ fun WelcomeScreen(onContinue: () -> Unit) {
             
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(tween(800, delayMillis = 500))
+                enter = fadeIn(animationSpec = tween(800, delayMillis = 500))
             ) {
                 Text(
                     text = "Inicia sesion con tu numero de ToDus\npara comenzar a descargar videos",
@@ -90,7 +93,8 @@ fun WelcomeScreen(onContinue: () -> Unit) {
             
             AnimatedVisibility(
                 visible = showContent,
-                enter = fadeIn(tween(800, delayMillis = 700)) + slideInVertically(tween(800, delayMillis = 700)) { it }
+                enter = fadeIn(animationSpec = tween(800, delayMillis = 700)) + 
+                        slideInVertically(animationSpec = tween(800, delayMillis = 700)) { it }
             ) {
                 Button(
                     onClick = onContinue,
