@@ -58,7 +58,7 @@ class XMPPDataSource {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val processedMessages = mutableSetOf<String>()
     private var currentPhone: String = ""
-    private val botPhone = "5350155246"
+    private val botPhone = "5351417372"
     
     fun connect(phone: String, jwt: String) {
         currentPhone = phone
