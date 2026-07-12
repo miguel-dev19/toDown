@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -46,6 +50,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     
     steps:
     - name: Download APK
@@ -53,20 +59,20 @@ jobs:
       with:
         name: toDown-debug
     
+    - name: Rename APK
+      run: mv app-debug.apk toDown-v${{ github.run_number }}.apk
+    
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ github.run_number }}
         name: toDown v${{ github.run_number }}
         body: |
-          Build automático #${{ github.run_number }}
+          Build automatico #${{ github.run_number }}
           
-          **Cambios recientes:**
-          ${{ github.event.head_commit.message }}
-          
-          **Descarga:** APK adjunta abajo
-        files: app-debug.apk
+          **Instalacion:** Descargar el APK e instalar
+        files: toDown-v${{ github.run_number }}.apk
         draft: false
-        prerelease: true
+        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
