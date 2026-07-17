@@ -11,7 +11,7 @@ import com.todown.data.local.DownloadDatabase
 import com.todown.data.local.PreferencesManager
 import com.todown.data.repository.DownloadRepository
 import com.todown.network.auth.JwtAuthenticator
-import com.todown.network.xmpp.XMPPDataSource
+import com.todown.network.xmpp.XmppClient
 import com.todown.ui.screens.*
 import com.todown.viewmodel.HomeViewModel
 import kotlinx.coroutines.flow.first
@@ -22,7 +22,7 @@ import java.io.File
 fun ToDownNavigation(navController: NavHostController) {
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
-    val xmppDataSource = remember { XMPPDataSource() }
+    val xmppClient = remember { XmppClient() }
     val jwtAuthenticator = remember { JwtAuthenticator() }
     
     var hasSession by remember { mutableStateOf<Boolean?>(null) }
@@ -92,7 +92,7 @@ fun ToDownNavigation(navController: NavHostController) {
                 factory = object : androidx.lifecycle.ViewModelProvider.Factory {
                     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return HomeViewModel(downloadRepository, xmppDataSource) as T
+                        return HomeViewModel(downloadRepository, xmppClient) as T
                     }
                 }
             )
@@ -107,7 +107,7 @@ fun ToDownNavigation(navController: NavHostController) {
                 val jwt = preferencesManager.jwtToken.first()
                 val phone = preferencesManager.phoneNumber.first()
                 if (jwt != null && phone != null) {
-                    xmppDataSource.connect(phone, jwt)
+                    xmppClient.connect(phone, jwt)
                 }
             }
             
@@ -148,7 +148,7 @@ fun ToDownNavigation(navController: NavHostController) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 storagePath = storagePath,
-                connectionState = xmppDataSource.connectionState.collectAsState().value,
+                connectionState = xmppClient.connectionState.collectAsState().value,
                 phoneNumber = phone ?: "",
                 preferencesManager = preferencesManager,
                 onChangeStoragePath = { }

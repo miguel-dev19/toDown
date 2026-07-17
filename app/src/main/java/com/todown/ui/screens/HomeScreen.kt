@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.todown.data.local.DownloadEntity
 import com.todown.network.xmpp.BotState
-import com.todown.network.xmpp.XMPPConnectionState
+import com.todown.network.xmpp.ConnectionState
 import com.todown.ui.components.DownloadItem
 import com.todown.ui.components.LinkBottomSheet
 import com.todown.ui.theme.*
@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     downloads: List<DownloadEntity>,
-    connectionState: XMPPConnectionState,
+    connectionState: ConnectionState,
     phoneNumber: String,
     onPlayVideo: (DownloadEntity) -> Unit,
     onPauseDownload: (String) -> Unit,
@@ -69,8 +69,8 @@ fun HomeScreen(
                                     modifier = Modifier.size(16.dp).align(Alignment.BottomEnd)
                                         .background(
                                             when (connectionState) {
-                                                is XMPPConnectionState.Connected -> Green
-                                                is XMPPConnectionState.Connecting -> Yellow
+                                                is ConnectionState.Connected -> Green
+                                                is ConnectionState.Connecting -> Yellow
                                                 else -> Red
                                             },
                                             MaterialTheme.shapes.extraLarge
@@ -85,29 +85,29 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     when (connectionState) {
-                                        is XMPPConnectionState.Connected -> Icons.Default.CheckCircle
-                                        is XMPPConnectionState.Connecting -> Icons.Default.Sync
+                                        is ConnectionState.Connected -> Icons.Default.CheckCircle
+                                        is ConnectionState.Connecting -> Icons.Default.Sync
                                         else -> Icons.Default.Cancel
                                     },
                                     null, Modifier.size(16.dp),
                                     tint = when (connectionState) {
-                                        is XMPPConnectionState.Connected -> Green
-                                        is XMPPConnectionState.Connecting -> Yellow
+                                        is ConnectionState.Connected -> Green
+                                        is ConnectionState.Connecting -> Yellow
                                         else -> Red
                                     }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     when (connectionState) {
-                                        is XMPPConnectionState.Connected -> "Conectado"
-                                        is XMPPConnectionState.Connecting -> "Conectando..."
-                                        is XMPPConnectionState.Disconnected -> "Desconectado"
-                                        is XMPPConnectionState.Error -> "Error"
+                                        is ConnectionState.Connected -> "Conectado"
+                                        is ConnectionState.Connecting -> "Conectando..."
+                                        is ConnectionState.Disconnected -> "Desconectado"
+                                        is ConnectionState.Error -> "Error"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = when (connectionState) {
-                                        is XMPPConnectionState.Connected -> Green
-                                        is XMPPConnectionState.Connecting -> Yellow
+                                        is ConnectionState.Connected -> Green
+                                        is ConnectionState.Connecting -> Yellow
                                         else -> Red
                                     }
                                 )

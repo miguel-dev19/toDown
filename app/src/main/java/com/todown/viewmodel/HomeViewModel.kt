@@ -10,13 +10,13 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val downloadRepository: DownloadRepository,
-    private val xmppDataSource: XMPPDataSource
+    private val xmppDataSource: XmppClient
 ) : ViewModel() {
     
     val downloads: StateFlow<List<DownloadEntity>> = downloadRepository.getAllDownloads()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
-    val connectionState: StateFlow<XMPPConnectionState> = xmppDataSource.connectionState
+    val connectionState: StateFlow<ConnectionState> = xmppDataSource.connectionState
     val botState: StateFlow<BotState?> = xmppDataSource.botState
     val errorMessage: StateFlow<String?> = xmppDataSource.errorMessage
     val videoData: StateFlow<VideoData?> = xmppDataSource.videoMessages
