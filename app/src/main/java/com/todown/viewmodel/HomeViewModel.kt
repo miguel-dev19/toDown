@@ -10,16 +10,16 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val downloadRepository: DownloadRepository,
-    private val xmppDataSource: XmppClient
+    private val xmppClient: XmppClient
 ) : ViewModel() {
     
     val downloads: StateFlow<List<DownloadEntity>> = downloadRepository.getAllDownloads()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
-    val connectionState: StateFlow<ConnectionState> = xmppDataSource.connectionState
-    val botState: StateFlow<BotState?> = xmppDataSource.botState
-    val errorMessage: StateFlow<String?> = xmppDataSource.errorMessage
-    val videoData: StateFlow<VideoData?> = xmppDataSource.videoMessages
+    val connectionState: StateFlow<ConnectionState> = xmppClient.connectionState
+    val botState: StateFlow<BotState?> = xmppClient.botState
+    val errorMessage: StateFlow<String?> = xmppClient.errorMessage
+    val videoData: StateFlow<VideoData?> = xmppClient.videoMessages
     
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing
@@ -27,52 +27,26 @@ class HomeViewModel(
     fun sendUrlToBot(url: String) {
         viewModelScope.launch {
             _isProcessing.value = true
-            xmppDataSource.clearVideoData()
-            xmppDataSource.sendUrlToBot(url)
+            xmppClient.clearVideoData()
+            xmppClient.sendUrlToBot(url)
             
             launch {
-                xmppDataSource.videoMessages
-                    .filterNotNull()
-                    .first()
-                    .let { video -> startDownload(video) }
+                xmppClient.videoMessages.filterNotNull().first().let { video -> startDownload(video) }
             }
         }
     }
     
     fun startDownload(videoData: VideoData) {
         viewModelScope.launch {
-            downloadRepository.startDownload(
-                videoData = videoData,
-                onProgress = { },
-                onComplete = {
-                    _isProcessing.value = false
-                    xmppDataSource.clearVideoData()
-                },
-                onError = {
-                    _isProcessing.value = false
-                }
-            )
+            downloadRepository.startDownload(videoData = videoData,
+                onProgress = { }, onComplete = { _isProcessing.value = false; xmppClient.clearVideoData() },
+                onError = { _isProcessing.value = false })
         }
     }
     
-    fun pauseDownload(downloadId: String) {
-        viewModelScope.launch { downloadRepository.pauseDownload(downloadId) }
-    }
-    
-    fun resumeDownload(downloadId: String) {
-        viewModelScope.launch { downloadRepository.resumeDownload(downloadId) }
-    }
-    
-    fun cancelDownload(downloadId: String) {
-        viewModelScope.launch { downloadRepository.cancelDownload(downloadId) }
-    }
-    
-    fun clearCompleted() {
-        viewModelScope.launch { downloadRepository.clearCompleted() }
-    }
-    
-    fun clearBotState() {
-        _isProcessing.value = false
-        xmppDataSource.clearVideoData()
-    }
+    fun pauseDownload(downloadId: String) { viewModelScope.launch { downloadRepository.pauseDownload(downloadId) } }
+    fun resumeDownload(downloadId: String) { viewModelScope.launch { downloadRepository.resumeDownload(downloadId) } }
+    fun cancelDownload(downloadId: String) { viewModelScope.launch { downloadRepository.cancelDownload(downloadId) } }
+    fun clearCompleted() { viewModelScope.launch { downloadRepository.clearCompleted() } }
+    fun clearBotState() { _isProcessing.value = false; xmppClient.clearVideoData() }
 }

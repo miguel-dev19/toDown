@@ -12,8 +12,6 @@ import com.todown.data.local.PreferencesManager
 import com.todown.data.repository.DownloadRepository
 import com.todown.network.auth.JwtAuthenticator
 import com.todown.network.xmpp.XmppClient
-import com.todown.network.xmpp.ConnectionState
-import com.todown.network.xmpp.ConnectionState
 import com.todown.ui.screens.*
 import com.todown.viewmodel.HomeViewModel
 import kotlinx.coroutines.flow.first
@@ -24,7 +22,7 @@ import java.io.File
 fun ToDownNavigation(navController: NavHostController) {
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
-    val xmppClient = remember { XmppClient() }
+    val xmppClient = remember { XmppClient(context) }
     val jwtAuthenticator = remember { JwtAuthenticator() }
     
     var hasSession by remember { mutableStateOf<Boolean?>(null) }
@@ -68,9 +66,7 @@ fun ToDownNavigation(navController: NavHostController) {
                             preferencesManager.saveJwtToken(jwt)
                             preferencesManager.savePhoneNumber(phone)
                             isLoading = false
-                            navController.navigate("home") {
-                                popUpTo("welcome") { inclusive = true }
-                            }
+                            navController.navigate("home") { popUpTo("welcome") { inclusive = true } }
                         }.onFailure {
                             isLoading = false
                             errorMessage = "Error de autenticacion"
@@ -160,22 +156,16 @@ fun ToDownNavigation(navController: NavHostController) {
         composable("player/{fileName}/{fileSize}") { backStackEntry ->
             val fileName = backStackEntry.arguments?.getString("fileName") ?: ""
             val fileSize = backStackEntry.arguments?.getString("fileSize")?.toLongOrNull() ?: 0L
-            val videoFile = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-                "toDown/$fileName"
-            )
+            val videoFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "toDown/$fileName")
             
             if (videoFile.exists()) {
                 VideoPlayerScreen(
-                    videoFile = videoFile,
-                    fileName = fileName,
-                    fileSize = fileSize,
+                    videoFile = videoFile, fileName = fileName, fileSize = fileSize,
                     onBack = { navController.popBackStack() },
                     onShare = {
                         val shareIntent = android.content.Intent().apply {
                             action = android.content.Intent.ACTION_SEND
-                            putExtra(android.content.Intent.EXTRA_STREAM,
-                                androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider", videoFile))
+                            putExtra(android.content.Intent.EXTRA_STREAM, androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider", videoFile))
                             type = "video/*"
                         }
                         context.startActivity(android.content.Intent.createChooser(shareIntent, "Compartir"))
