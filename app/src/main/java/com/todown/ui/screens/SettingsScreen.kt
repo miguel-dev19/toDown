@@ -34,19 +34,12 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var showPermissionDialog by remember { mutableStateOf(false) }
     var currentPath by remember { mutableStateOf(storagePath) }
     
-    // Permisos de almacenamiento
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions.values.all { it }) {
-            // Permisos concedidos
-        }
-    }
+    ) { }
     
-    // Selector de directorio
     val directoryPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
@@ -62,10 +55,7 @@ fun SettingsScreen(
     
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
-            arrayOf(
-                android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
+            arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         )
     }
     
@@ -74,74 +64,31 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("Configuracion", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
-                    }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Volver") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface)
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Seccion: Almacenamiento
-            Text(
-                "Almacenamiento",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = Blue,
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
-            )
+            Text("Almacenamiento", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = Blue, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
             
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(16.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(44.dp),
-                            shape = CircleShape,
-                            color = Blue.copy(alpha = 0.12f)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Folder, null, tint = Blue, modifier = Modifier.size(22.dp))
-                            }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Surface(modifier = Modifier.size(44.dp), shape = CircleShape, color = Blue.copy(alpha = 0.12f)) {
+                            Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Folder, null, tint = Blue, modifier = Modifier.size(22.dp)) }
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Ubicacion de descargas",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = White
-                            )
+                            Text("Ubicacion de descargas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = White)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                currentPath,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Gray,
-                                maxLines = 1
-                            )
+                            Text(currentPath, style = MaterialTheme.typography.bodySmall, color = Gray, maxLines = 1)
                         }
-                        FilledTonalButton(
-                            onClick = { directoryPicker.launch(null) },
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = Blue.copy(alpha = 0.15f),
-                                contentColor = Blue
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
+                        FilledTonalButton(onClick = { directoryPicker.launch(null) }, colors = ButtonDefaults.filledTonalButtonColors(containerColor = Blue.copy(alpha = 0.15f), contentColor = Blue), shape = RoundedCornerShape(10.dp)) {
                             Text("Cambiar", fontWeight = FontWeight.Medium)
                         }
                     }
@@ -150,48 +97,29 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Seccion: Conexion
-            Text(
-                "Conexion",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = Blue,
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
-            )
+            Text("Conexion", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = Blue, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
             
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(16.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Estado XMPP
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Surface(
-                            modifier = Modifier.size(44.dp),
-                            shape = CircleShape,
+                            modifier = Modifier.size(44.dp), shape = CircleShape,
                             color = when (connectionState) {
-                                is ConnectionState.Connected -> Green.copy(alpha = 0.12f)
-                                is ConnectionState.Connecting -> Yellow.copy(alpha = 0.12f)
+                                ConnectionState.CONNECTED -> Green.copy(alpha = 0.12f)
+                                ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Yellow.copy(alpha = 0.12f)
                                 else -> Red.copy(alpha = 0.12f)
                             }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     when (connectionState) {
-                                        is ConnectionState.Connected -> Icons.Default.CheckCircle
-                                        is ConnectionState.Connecting -> Icons.Default.Sync
-                                        is ConnectionState.Disconnected -> Icons.Default.Cancel
-                                        is ConnectionState.Error -> Icons.Default.Error
-                                    },
-                                    null,
-                                    Modifier.size(22.dp),
+                                        ConnectionState.CONNECTED -> Icons.Default.CheckCircle
+                                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Icons.Default.Sync
+                                        else -> Icons.Default.Cancel
+                                    }, null, Modifier.size(22.dp),
                                     tint = when (connectionState) {
-                                        is ConnectionState.Connected -> Green
-                                        is ConnectionState.Connecting -> Yellow
+                                        ConnectionState.CONNECTED -> Green
+                                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Yellow
                                         else -> Red
                                     }
                                 )
@@ -201,57 +129,30 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 when (connectionState) {
-                                    is ConnectionState.Connected -> "Conectado"
-                                    is ConnectionState.Connecting -> "Conectando..."
-                                    is ConnectionState.Disconnected -> "Desconectado"
-                                    is ConnectionState.Error -> "Error"
+                                    ConnectionState.CONNECTED -> "Conectado"
+                                    ConnectionState.CONNECTING -> "Conectando..."
+                                    ConnectionState.RECONNECTING -> "Reconectando..."
+                                    ConnectionState.DISCONNECTED -> "Desconectado"
+                                    ConnectionState.FAILED -> "Error"
                                 },
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = White
+                                style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                phoneNumber,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Gray
-                            )
+                            Text(phoneNumber, style = MaterialTheme.typography.bodySmall, color = Gray)
                         }
                     }
                     
-                    Divider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = SurfaceVariant
-                    )
+                    Divider(modifier = Modifier.padding(vertical = 12.dp), color = SurfaceVariant)
                     
-                    // Version
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(44.dp),
-                            shape = CircleShape,
-                            color = Purple.copy(alpha = 0.12f)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Info, null, tint = Purple, modifier = Modifier.size(22.dp))
-                            }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Surface(modifier = Modifier.size(44.dp), shape = CircleShape, color = Purple.copy(alpha = 0.12f)) {
+                            Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Info, null, tint = Purple, modifier = Modifier.size(22.dp)) }
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "toDown v1.0",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = White
-                            )
+                            Text("toDown v1.0", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = White)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                "Gestor de descargas ToDus",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Gray
-                            )
+                            Text("Gestor de descargas ToDus", style = MaterialTheme.typography.bodySmall, color = Gray)
                         }
                     }
                 }

@@ -12,6 +12,7 @@ import com.todown.data.local.PreferencesManager
 import com.todown.data.repository.DownloadRepository
 import com.todown.network.auth.JwtAuthenticator
 import com.todown.network.xmpp.XmppClient
+import com.todown.network.xmpp.ConnectionState
 import com.todown.ui.screens.*
 import com.todown.viewmodel.HomeViewModel
 import kotlinx.coroutines.flow.first

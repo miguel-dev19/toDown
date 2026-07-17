@@ -69,8 +69,8 @@ fun HomeScreen(
                                     modifier = Modifier.size(16.dp).align(Alignment.BottomEnd)
                                         .background(
                                             when (connectionState) {
-                                                is ConnectionState.Connected -> Green
-                                                is ConnectionState.Connecting -> Yellow
+                                                ConnectionState.CONNECTED -> Green
+                                                ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Yellow
                                                 else -> Red
                                             },
                                             MaterialTheme.shapes.extraLarge
@@ -85,29 +85,30 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     when (connectionState) {
-                                        is ConnectionState.Connected -> Icons.Default.CheckCircle
-                                        is ConnectionState.Connecting -> Icons.Default.Sync
+                                        ConnectionState.CONNECTED -> Icons.Default.CheckCircle
+                                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Icons.Default.Sync
                                         else -> Icons.Default.Cancel
                                     },
                                     null, Modifier.size(16.dp),
                                     tint = when (connectionState) {
-                                        is ConnectionState.Connected -> Green
-                                        is ConnectionState.Connecting -> Yellow
+                                        ConnectionState.CONNECTED -> Green
+                                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Yellow
                                         else -> Red
                                     }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     when (connectionState) {
-                                        is ConnectionState.Connected -> "Conectado"
-                                        is ConnectionState.Connecting -> "Conectando..."
-                                        is ConnectionState.Disconnected -> "Desconectado"
-                                        is ConnectionState.Error -> "Error"
+                                        ConnectionState.CONNECTED -> "Conectado"
+                                        ConnectionState.CONNECTING -> "Conectando..."
+                                        ConnectionState.RECONNECTING -> "Reconectando..."
+                                        ConnectionState.DISCONNECTED -> "Desconectado"
+                                        ConnectionState.FAILED -> "Error"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = when (connectionState) {
-                                        is ConnectionState.Connected -> Green
-                                        is ConnectionState.Connecting -> Yellow
+                                        ConnectionState.CONNECTED -> Green
+                                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> Yellow
                                         else -> Red
                                     }
                                 )
