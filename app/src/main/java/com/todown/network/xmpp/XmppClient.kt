@@ -212,3 +212,44 @@ class XmppClient(private val context: Context? = null) {
         _errorMessage.value = null
     }
 }
+
+// Datos del perfil propio
+data class OwnerProfile(
+    val alias: String = "",
+    val toDusId: String = "",
+    val bio: String = "",
+    val photoUrl: String = "",
+    val thumbUrl: String = ""
+)
+
+// Obtener perfil propio
+suspend fun getOwnerProfile(): OwnerProfile {
+    return try {
+        val iqId = UUID.randomUUID().toString().replace("-", "").take(8)
+        val xml = "<iq type='get' id='$iqId'><query xmlns='todus:users:getinfo' users='$phone'/></iq>"
+        connection.sendRaw(xml)
+        
+        delay(1500)
+        val sb = StringBuilder()
+        var attempts = 0
+        while (attempts < 20) {
+            val data = connection.readRaw()
+            if (!data.isNullOrBlank()) sb.append(data)
+            if (sb.toString().contains("</iq>")) break
+            attempts++
+            delay(200)
+        }
+        
+        val resp = sb.toString()
+        val aliasB64 = Regex("alias='([^']+)'").find(resp)?.groupValues?.get(1) ?: ""
+        val alias = try { android.util.Base64.decode(aliasB64, android.util.Base64.DEFAULT).decodeToString() } catch (_: Exception) { aliasB64 }
+        val toDusId = Regex("todus_id='([^']+)'").find(resp)?.groupValues?.get(1) ?: ""
+        val bio = Regex("description='([^']+)'").find(resp)?.groupValues?.get(1) ?: ""
+        val photoUrl = Regex("pic_url='([^']+)'").find(resp)?.groupValues?.get(1) ?: ""
+        val thumbUrl = Regex("pic_thumb_url='([^']+)'").find(resp)?.groupValues?.get(1) ?: ""
+        
+        OwnerProfile(alias, toDusId, bio, photoUrl, thumbUrl)
+    } catch (e: Exception) {
+        OwnerProfile()
+    }
+}

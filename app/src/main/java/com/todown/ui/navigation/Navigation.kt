@@ -12,6 +12,7 @@ import com.todown.data.local.PreferencesManager
 import com.todown.data.repository.DownloadRepository
 import com.todown.network.auth.JwtAuthenticator
 import com.todown.network.xmpp.XmppClient
+import com.todown.network.xmpp.OwnerProfile
 import com.todown.ui.screens.*
 import com.todown.viewmodel.HomeViewModel
 import kotlinx.coroutines.flow.first
@@ -86,7 +87,9 @@ fun ToDownNavigation(navController: NavHostController) {
             val database = remember { DownloadDatabase.getInstance(context) }
             val downloadRepository = remember { DownloadRepository(database.downloadDao()) }
             
-            val homeViewModel: HomeViewModel = viewModel(
+            var ownerProfile by remember { mutableStateOf<OwnerProfile?>(null) }
+    
+    val homeViewModel: HomeViewModel = viewModel(
                 factory = object : androidx.lifecycle.ViewModelProvider.Factory {
                     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
@@ -106,6 +109,7 @@ fun ToDownNavigation(navController: NavHostController) {
                 val phone = preferencesManager.phoneNumber.first()
                 if (jwt != null && phone != null) {
                     xmppClient.connect(phone, jwt)
+                    try { ownerProfile = xmppClient.getOwnerProfile() } catch (_: Exception) {}
                 }
             }
             
@@ -115,6 +119,7 @@ fun ToDownNavigation(navController: NavHostController) {
             }
             
             HomeScreen(
+                ownerProfile = ownerProfile,
                 downloads = downloads,
                 connectionState = connectionState,
                 phoneNumber = phoneNumber ?: "",
